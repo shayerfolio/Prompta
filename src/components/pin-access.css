@@ -1,0 +1,6 @@
+.pin-shell{min-height:100dvh;display:grid;place-items:center;padding:24px;background:var(--bg,#171717)}
+.pin-card{width:100%;max-width:340px}
+.pin-brand{display:flex;align-items:center;justify-content:center;gap:10px;font-size:2rem;font-weight:650;letter-spacing:-1.1px;margin:0 0 42px}
+.pin-brand img{width:34px;height:34px}.pin-brand span{color:var(--accent,#f4775c);margin-left:-10px}
+.pin-card form{display:flex;flex-direction:column;gap:12px}.pin-input{min-height:52px;font-size:1.25rem;letter-spacing:.3em}.pin-card form>.btn{min-height:46px;margin-top:8px;justify-content:center}.pin-card .form-error{margin:0;line-height:1.5}.pin-setup{display:block;margin:20px auto 0}.sidebar-lock{margin:10px 0 0;width:100%}
+@media(max-width:480px){.pin-shell{padding:28px}.pin-brand{margin-bottom:36px}}

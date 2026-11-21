@@ -1,0 +1,14 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> prompta@0.7.0 test
+> vitest run
+
+
+ RUN  v4.1.12 /workspace/sites/prompta
+
+
+ Test Files  8 passed (8)
+      Tests  107 passed (107)
+   Start at  13:54:06
+   Duration  7.00s (transform 2.32s, setup 3.01s, import 3.62s, tests 11.61s, environment 8.23s)
+
