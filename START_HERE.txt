@@ -1,0 +1,63 @@
+PROMPTA 0.7
+
+INSTALL / SETUP / LAUNCH
+
+Install Node.js 22.12 or newer from https://nodejs.org/ and have a Cloudflare
+account ready. Extract the full project, open a terminal in that folder, and run:
+
+  npm install
+  npm run setup
+  npm run launch
+
+Setup asks for a Worker name, optional daily R2 backups, and your 6–12 digit PIN.
+PIN entry is masked. There is no default PIN and no Google sign-in.
+Setup saves local configuration only.
+
+Launch is the command that publishes to Cloudflare. It opens Cloudflare login if
+needed, creates/migrates D1, configures optional R2, uploads server secrets and
+deploys the app. Open its printed URL on any device and enter the same PIN to use
+the same shared library. Everyone with the PIN has the same library access.
+
+R2 must be enabled in your Cloudflare account if you select backups. Platform
+quotas and charges depend on your plan and usage. Read docs/SETUP.md for details.
+Nothing was published or deployed during this delivery.
+
+LOCAL REVIEW ONLY
+
+After npm install and npm run setup, run npm start instead of npm run launch.
+Open http://127.0.0.1:8787 and enter your PIN. Keep the terminal open.
+This uses a real local Worker and local D1. It does not write to the deployed
+library. Windows: Start-Prompta.bat. macOS: Start-Prompta.command.
+
+Do not open dist/index.html directly. A static-only server cannot provide the PIN
+API. Local records need explicit export/import to move into the deployed library.
+
+USING THE LIBRARY
+
+All prompts opens by default. The library starts empty. New prompt adds a record.
+Click a card's main content or blank area to copy its original text immediately.
+Cards show full titles and content. Variables appears only when placeholders are
+present and opens the variable form directly. History is in the ellipsis menu.
+There is no Details button. The grid Size slider adjusts card width on this device.
+Create, save and duplicate do not automatically open a panel.
+
+The mobile navigation is Prompts / Favorites / New / Collections.
+Settings includes Access, Data & backups, sync status and conflict review.
+Lock closes this device's access. Previously unlocked offline caches are not
+independently encrypted; use trusted devices and keep exports.
+
+UPGRADE AN EXISTING LIBRARY
+
+If earlier local records exist in this browser and origin, unlock Prompta and use
+Settings > Data & backups > Existing prompts on this device > Review import.
+Otherwise export JSON from the earlier release and import it after unlocking.
+Review and confirm; nothing is copied into the shared workspace automatically.
+Keep old records/exports until the migration is verified. Do not clear site data.
+
+Keep .prompta, .dev.vars and wrangler.config.json private. Preserve the same
+workspace ID/database configuration when updating. Never distribute your local
+server secrets with source code.
+
+Read README.md for usage, docs/SETUP.md for setup/migration, docs/DEPLOYMENT.md for
+updates, docs/BACKUPS.md for recovery, and docs/TEST_RESULTS.md for actual checks.
+The latest requirements in docs/UI_REVISION.md supersede the historical brief.
