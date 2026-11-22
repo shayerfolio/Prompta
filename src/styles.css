@@ -184,3 +184,14 @@
   .library-page .results-toolbar:has(.grid-size-control) .grid-size-control{grid-column:1;grid-row:2}
   .library-page .results-toolbar:has(.grid-size-control) .segmented{grid-column:2;grid-row:2;justify-self:end}
 }
+
+/* Cuebase v0.8.1: compact, consistent prompt cards without changing stored content. */
+.prompt-grid .prompt-card { height: 180px; min-height: 180px; max-height: 180px; overflow: hidden; }
+.prompt-grid .prompt-card-main { flex: 0 1 auto; min-height: 0; overflow: hidden; }
+.prompt-grid .prompt-card-main h3, .prompt-list .prompt-card-main h3 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.prompt-grid .prompt-card-main p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; overflow-wrap: anywhere; max-height: 3.3em; min-height: 0; font-size: .8125rem; line-height: 1.65; }
+.prompt-grid .card-tags { margin-top: 7px; margin-bottom: 4px; min-height: 0; overflow: hidden; flex-wrap: nowrap; }
+.prompt-grid .tag { max-width: 90px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.prompt-grid .prompt-card-footer { margin-top: auto; flex-shrink: 0; }
+.prompt-list .prompt-card-main p { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; min-height: 0; }
+.prompt-list .card-tags { max-height: 28px; overflow: hidden; }

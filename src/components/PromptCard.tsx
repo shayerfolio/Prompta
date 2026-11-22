@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Star, MoreHorizontal, Pencil, CopyPlus, Trash2, FileText, Image, Video, Code2, Sparkles, Braces, RotateCcw, History } from 'lucide-react';
+import { Check, Eye, Star, MoreHorizontal, Pencil, CopyPlus, Trash2, FileText, Image, Video, Code2, Sparkles, Braces, RotateCcw, History } from 'lucide-react';
 import type { Prompt, LibrarySnapshot } from '../domain/types';
 import { timeAgo } from '../lib/format';
 import { detectVariables } from '../domain/variables';
@@ -53,6 +53,7 @@ export function PromptCard({ prompt, snapshot, view = 'grid', onOpen, onVariable
     {tags.length>0&&<div className="card-tags">{tags.map(t=><span className="tag" key={t.id}>{t.name}</span>)}</div>}
     <div className="prompt-card-footer"><span>{prompt.deletedAt ? `Deleted ${timeAgo(prompt.deletedAt).toLowerCase()}` : `Edited ${timeAgo(prompt.updatedAt).toLowerCase()}`}</span><div className="card-footer-actions">
       {!deleted&&<span className={`card-copy-status ${copied?'is-copied':''}`} role="status" aria-live="polite">{copied&&<><Check size={13} aria-hidden="true"/>Copied</>}</span>}
+      {!deleted&&<button type="button" className="variables-btn" aria-label={`View full prompt: ${prompt.title}`} onClick={event=>{event.stopPropagation();onOpen();}}><Eye size={15} aria-hidden="true"/><span>View</span></button>}
       {!deleted&&variableCount>0&&<button type="button" className="variables-btn" aria-label={`Variables for ${prompt.title}`} onClick={event=>{event.stopPropagation();onVariables();}}><Braces size={15} aria-hidden="true"/><span>Variables</span></button>}
       {deleted?<Button small onClick={event=>{event.stopPropagation();onRestore?.();}}><RotateCcw size={14}/>Restore</Button>:prompt.kind==='template'?<Button small onClick={event=>{event.stopPropagation();onApply?.();}}>Use template</Button>:null}
     </div></div>

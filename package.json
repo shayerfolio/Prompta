@@ -1,9 +1,11 @@
 {
   "name": "cuebase",
   "private": true,
-  "version": "0.8.0",
+  "version": "0.8.1",
   "type": "module",
-  "engines": { "node": ">=22.12.0" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "node scripts/serve.mjs --dev",
     "start": "node scripts/serve.mjs",
