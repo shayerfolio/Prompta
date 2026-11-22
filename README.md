@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # Cuebase 0.8
+=======
+# Prompta 0.7 .
+>>>>>>> d6e2d5f399d3ff93593a6695f8e1d7a86d065975
 
 Cuebase is the renamed Prompta prompt library. It now uses **GitHub → Cloudflare Pages**, with a shared PIN set in the Cloudflare dashboard. Keep your existing Pages project and **https://cuebase.pages.dev/**.
 
