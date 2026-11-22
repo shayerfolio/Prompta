@@ -1,4 +1,4 @@
-# Prompta 0.7
+# Prompta 0.7 .
 
 Prompta stores one shared prompt library behind a PIN. Open the deployed URL on another device, enter the same PIN, and use the same library. The app has no Google sign-in or per-user account. Everyone with the PIN has the same access to its records.
 
