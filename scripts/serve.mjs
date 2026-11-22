@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-/** Local Worker, D1 and PIN access. This command never deploys to Cloudflare. */
+/** Local Cloudflare Pages, D1 and PIN access. Never deploys or logs in. */
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
-import { configPath, exists, loadSetup, localDataPath, npm, requireNode, root, wrangler, writeConfiguration } from './config.mjs';
+import { command, exists, localDataPath, requireNode, root } from './config.mjs';
 
 function options() {
   const args = process.argv.slice(2);
@@ -20,8 +20,8 @@ function options() {
       const split = argument.indexOf('='); parsed[argument.slice(2, split)] = argument.slice(split + 1);
     } else throw new Error(`Unknown option: ${argument}`);
   }
-  parsed.port = Number(parsed.port || process.env.PORT || process.env.PROMPTA_PORT || (parsed.dev ? 4173 : 8787));
-  parsed.host ||= process.env.HOST || (parsed.dev ? '0.0.0.0' : '127.0.0.1');
+  parsed.port = Number(parsed.port || process.env.PORT || (parsed.dev ? 4173 : 8788));
+  parsed.host ||= process.env.HOST || '127.0.0.1';
   if (!Number.isInteger(parsed.port) || parsed.port < 1024 || parsed.port > 65535) throw new Error('Choose a port from 1024 to 65535.');
   if (!['127.0.0.1', '0.0.0.0', 'localhost', '::1', '::'].includes(parsed.host)) throw new Error('Use a local host such as 127.0.0.1 or 0.0.0.0.');
   return parsed;
@@ -30,16 +30,16 @@ function options() {
 async function openWhenReady(url, worker) {
   for (let attempt = 0; attempt < 90 && worker.exitCode === null; attempt++) {
     try {
-      const response = await fetch(`${url}/api/session`, { signal: AbortSignal.timeout(1_000) });
-      if (response.status < 500) {
-        const command = process.platform === 'win32' ? 'cmd.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+      const response = await fetch(url, { signal: AbortSignal.timeout(1_000) });
+      if (response.ok) {
+        const program = process.platform === 'win32' ? 'cmd.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open';
         const args = process.platform === 'win32' ? ['/d', '/c', 'start', '', url] : [url];
-        const browser = spawn(command, args, { stdio: 'ignore', detached: true });
+        const browser = spawn(program, args, { stdio: 'ignore', detached: true });
         browser.on('error', () => console.log(`Open ${url} in your browser.`));
         browser.unref();
         return;
       }
-    } catch { /* The local Worker is still starting. */ }
+    } catch { /* The Pages emulator is still starting. */ }
     await new Promise(resolveTimer => setTimeout(resolveTimer, 500));
   }
 }
@@ -48,19 +48,22 @@ async function main() {
   requireNode();
   const settings = options();
   if (settings.help) {
-    console.log('npm start [-- --open --port 8787 --host 127.0.0.1]\nnpm run dev [-- --port 4173 --host 0.0.0.0]\n\nRequires npm install and npm run setup. Runs local D1 migrations, then the Worker and built assets.\nBuilds dist only when absent; run npm run build after source changes. Nothing is published.');
+    console.log('npm start [-- --open --port 8788 --host 127.0.0.1]\nnpm run dev [-- --port 4173]\n\nOptional local preview: npm install, npm run setup, npm start.\nServes Cloudflare Pages with a local D1 database. No Cloudflare login is needed.\nBuilds dist only when absent; run npm run build after source changes.');
     return;
   }
-  const { state, secrets } = await loadSetup();
-  await writeConfiguration(state, secrets);
-  if (!await exists(resolve(root, 'dist/index.html'))) await npm(['run', 'build'], { label: 'Build' });
-  await wrangler(['d1', 'migrations', 'apply', 'DB', '--local', '--persist-to', localDataPath, '--config', configPath], { env: { CI: 'true' }, label: 'Local database migration' });
+  if (!await exists(resolve(root, 'dist/_worker.js'))) {
+    await command(process.execPath, [resolve(root, 'scripts/build.mjs')], { label: 'Build' });
+  }
+  if (!await exists(resolve(root, '.dev.vars'))) console.log('No local PIN is set. Run npm run setup to unlock this local preview.');
+  const cli = resolve(root, 'node_modules/wrangler/bin/wrangler.js');
+  if (!await exists(cli)) throw new Error('Dependencies are missing. Run npm install first.');
   const urlHost = ['0.0.0.0', '::'].includes(settings.host) ? '127.0.0.1' : settings.host === '::1' ? '[::1]' : settings.host;
   const url = `http://${urlHost}:${settings.port}`;
-  console.log(`\nLocal Prompta: ${url}\nEnter the PIN you chose during setup. This local database is separate from the deployed shared library.\nKeep this terminal open; press Ctrl+C to stop.\n`);
-  const worker = spawn(process.execPath, [resolve(root, 'node_modules/wrangler/bin/wrangler.js'),
-    'dev', '--local', '--ip', settings.host, '--port', String(settings.port), '--inspector-port', '0',
-    '--persist-to', localDataPath, '--config', configPath], {
+  console.log(`\nLocal Cuebase: ${url}\nThis local database is separate from your live shared library.\nKeep this terminal open; press Ctrl+C to stop.\n`);
+  const worker = spawn(process.execPath, [cli,
+    'pages', 'dev', 'dist', '--ip', settings.host, '--port', String(settings.port), '--inspector-port', '0',
+    '--compatibility-date', '2026-11-21', '--d1', 'DB=00000000-0000-0000-0000-000000000000',
+    '--binding', 'PROMPTA_ALLOW_INSECURE_LOCAL_DEV=true', '--persist-to', localDataPath], {
     cwd: root, env: { ...process.env, WRANGLER_SEND_METRICS: 'false' }, stdio: 'inherit', shell: false,
   });
   worker.on('error', error => { console.error(error.message); process.exitCode = 1; });

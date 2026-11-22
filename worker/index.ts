@@ -1,5 +1,6 @@
 import type { ExecutionContext, ScheduledController } from '@cloudflare/workers-types';
 import { backupStatus, createBackup, maintenance } from './backups';
+import { prepareEnvironment } from './bootstrap';
 import { HttpError, json, readJson, type Env } from './env';
 import { applyMutation, listRecords } from './records';
 import { createSession, enforceUnlockLimit, getSession, requireConfiguration, requireOrigin, requireSecureTransport, revokeSession, sessionCookie, verifyPin } from './security';
@@ -7,10 +8,11 @@ import { createSession, enforceUnlockLimit, getSession, requireConfiguration, re
 const locked = { authenticated: false, workspaceId: null, expiresAt: null, backup: { configured: false, lastBackupAt: null, error: null } };
 
 async function api(request: Request, env: Env): Promise<Response> {
-  const workspaceId = requireConfiguration(env);
   requireSecureTransport(request, env);
   const url = new URL(request.url);
   if (request.method !== 'GET') requireOrigin(request);
+  env = await prepareEnvironment(env);
+  const workspaceId = requireConfiguration(env);
 
   if (url.pathname === '/api/session' && request.method === 'GET') {
     const session = await getSession(request, env);
@@ -33,7 +35,7 @@ async function api(request: Request, env: Env): Promise<Response> {
 
   const session = await getSession(request, env);
   // A delayed unauthorized response must not erase a newer cookie created by unlock.
-  if (!session) throw new HttpError(401, 'Unlock Prompta to access the shared library.');
+  if (!session) throw new HttpError(401, 'Unlock Cuebase to access the shared library.');
   if (url.pathname === '/api/records' && request.method === 'GET') return json(await listRecords(url, env));
   if (url.pathname === '/api/versions' && request.method === 'GET') return json(await listRecords(url, env, true));
   if (url.pathname === '/api/mutations' && request.method === 'POST') {
@@ -56,9 +58,10 @@ export default {
       }
     }
     if (env.ASSETS) return env.ASSETS.fetch(request as never) as unknown as Promise<Response>;
-    return new Response('Build the Prompta frontend before starting the server.', { status: 503, headers: { 'Cache-Control': 'no-store' } });
+    return new Response('Build the Cuebase frontend before starting the server.', { status: 503, headers: { 'Cache-Control': 'no-store' } });
   },
   async scheduled(_controller: ScheduledController, env: Env, _context: ExecutionContext): Promise<void> {
+    env = await prepareEnvironment(env);
     requireConfiguration(env);
     await maintenance(env);
     if (env.BACKUPS) await createBackup(env);

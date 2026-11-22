@@ -23,6 +23,7 @@ export type Entity = Prompt | Category | Tag | Collection | PromptVersion | Sett
 export interface Mutation { id: string; entityId: string; ownerId: string; baseRevision: number; entity: Entity; createdAt: string }
 export interface SyncConflict { id: string; entityId: string; ownerId: string; local: Entity; remote: Entity; createdAt: string }
 export interface LibrarySnapshot { ready: boolean; ownerId: string; prompts: Prompt[]; templates: Prompt[]; categories: Category[]; tags: Tag[]; collections: Collection[]; settings: Settings; pendingCount: number; conflicts: SyncConflict[]; error: string | null }
+// Keep the original format marker so Cuebase and existing Prompta backups interoperate.
 export interface ExportData { app: 'Prompta'; schemaVersion: 1; exportedAt: string; entities: Entity[] }
 export interface ImportPreview { data: ExportData; prompts: number; templates: number; categories: number; tags: number; collections: number; versions: number; duplicates: number; warnings: string[] }
 export interface CloudState { configured: boolean; status: 'local' | 'signed-out' | 'connecting' | 'synced' | 'syncing' | 'offline' | 'error' | 'conflict'; user: { uid: string; displayName: string | null; email: string | null; photoURL: string | null } | null; lastSyncAt: string | null; error: string | null; backup: { configured: boolean; lastBackupAt: string | null; error: string | null } }

@@ -1,97 +1,108 @@
-# Setup and migration
+# Set up Cuebase on your existing Pages project
 
-## Requirements
+This guide keeps **https://cuebase.pages.dev/** and your **prompta-library** database. The code is prepared for Cloudflare Pages; you do not need a separate Worker deployment.
 
-Use Node.js **22.12 or newer**, npm and a terminal. Publishing requires your own [Cloudflare account](https://dash.cloudflare.com/). Wrangler opens its browser login when needed. This is deployment administration; people using Prompta enter its shared PIN and do not sign in to Cloudflare or Google.
+## 1. Update the files on your PC
 
-Cloudflare must allow Workers and D1 in your account. If you choose automatic backups, enable R2 first. Review current [Workers](https://developers.cloudflare.com/workers/platform/pricing/), [D1](https://developers.cloudflare.com/d1/platform/pricing/) and [R2](https://developers.cloudflare.com/r2/pricing/) plan limits/pricing; the application does not promise unlimited free hosting.
+If you have unsynced work in the old app, let it sync before moving over. If you already have saved prompts, keep a JSON export from **Settings → Data & backups → Export library** as a separate copy.
 
-## Three commands
+1. Download and extract the full Cuebase ZIP in **Downloads**. Extract it outside the existing GitHub project folder.
+2. Open the extracted `Cuebase` folder.
+3. Double-click **Update-Cuebase.bat**. Node.js is already installed if you used the previous setup commands.
+4. Enter your existing repository folder: `C:\Users\MSI\Documents\GitHub\Prompta`. If it is shown as the default, press Enter.
+5. Wait for **Cuebase files are ready**.
 
-From the extracted project folder:
+The update preserves the `.git` repository, your GitHub connection and private local settings. It backs up the source it replaces in `.cuebase/update-backups/`, replaces the app folders, and removes old root Wrangler configuration and the faulty redirect. It also stops tracking local private settings and build files if an earlier upload included them. It does not remove secrets from historical Git commits; set a new PIN if an old one was uploaded.
 
-```bash
-npm install
-npm run setup
-npm run launch
-```
+If the project is somewhere else, **GitHub Desktop → Repository → Show in Explorer** shows the folder to use. The updater refuses unrelated projects and refuses to overwrite its own download folder.
 
-`setup` asks for:
+### Manual update, if preferred
 
-| Input | Meaning |
+Keep the repository's `.git` folder and private local files. Back up the old code. Replace the source folders and root project files with this package. Remove old root `wrangler.json`, `wrangler.jsonc`, `wrangler.toml`, `wrangler.config.json`, `Start-Prompta.*`, and the old `public/_redirects`. Do not upload `.dev.vars`, `.prompta`, `.cuebase`, `.wrangler` or `node_modules`. The Windows button handles these details for you.
+
+## 2. Push the updated project with GitHub Desktop
+
+1. Open GitHub Desktop and select the **Prompta** repository.
+2. Review the changed files. Full folders such as `src`, `worker`, `scripts`, `public` and `migrations` must be included.
+3. Use a commit summary such as **Switch to Cuebase Pages**.
+4. Click **Commit to [your current branch]** and then **Push origin**. Use the branch already connected to the Pages production deployment.
+
+The repository can stay named `Prompta`. The app is named Cuebase. Renaming the GitHub repository is not needed for this update.
+
+## 3. Check the Pages build settings
+
+Open [Cloudflare](https://dash.cloudflare.com/) → **Workers & Pages** → your existing **cuebase** Pages project. In **Settings → Build → Build configuration**, use:
+
+| Field | Enter |
 |---|---|
-| Worker name | A unique name in your Cloudflare account; 3–48 lowercase letters, digits or hyphens, starting with a letter |
-| Daily R2 backups | Whether launch should create private R2 snapshot storage |
-| Shared PIN | 6–12 digits, entered twice with masked input; leading zeros remain part of the PIN |
+| Framework preset, if requested | None |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Root directory | Blank / repository root |
+| Production branch | The branch you just pushed |
 
-Setup derives PBKDF2-SHA256 with a fresh 16-byte salt and 100,000 iterations. It stores the resulting hash, generates a random 32-byte session secret and chooses a stable `shared:<UUID>` workspace ID. No default PIN is supplied. Raw PINs are neither saved nor printed, and the script does not accept a PIN command-line flag.
+The Cloudflare build needs Node.js **22.12 or newer**. Your previous log already showed Node 22.23.4. Only if your build uses an older version, add the build variable `NODE_VERSION` with value `22`.
 
-**Setup makes no Cloudflare changes. Launch performs the deployment.** Launch builds first, checks Cloudflare access and the Worker name, creates/migrates D1, optionally creates R2, uploads only the two server secrets through stdin, and deploys the Worker and `dist` together. It preserves resource IDs for later runs. A name already belonging to an unrelated Worker/database/bucket stops the first launch instead of overwriting it.
+Keep the existing Pages project to keep its `cuebase.pages.dev` address. The package does not add a redirect to `workers.dev`.
 
-Open the URL printed by Cloudflare and enter the PIN. Use that same URL on each device. The workspace is shared; there are no separate personal accounts or permission levels.
+## 4. Connect the existing database
 
-## Files produced by setup
+Select the **Production** environment. Open **Settings → Bindings → Add → D1 database**.
 
-| File | Contents and handling |
+| Field | Enter/select |
 |---|---|
-| `.prompta/setup.json` | Worker/database/bucket names, workspace ID, selected account and provisioned resource IDs. Preserve for updates. |
-| `.prompta/secrets.json` | Server-only PIN hash and session secret. Keep private. |
-| `.dev.vars` | Local Worker secrets and a loopback-only HTTP development flag. Never deploy as a frontend file. |
-| `wrangler.config.json` | Generated binding/variable configuration used by launch and local start. Contains no PIN or session secret. |
-| `.prompta/local-state` | Persistent local D1/R2 development data after local start. Separate from production. |
+| Variable name | `DB` — uppercase |
+| D1 database | Existing `prompta-library` |
 
-These files are ignored by version control. The scripts request restrictive filesystem permissions where supported; this is not encryption. Keep them out of ZIP/source distributions. Store a secure copy of the installation configuration if you need to update from another computer. Deleting it and rerunning setup creates a new workspace identity; it does not reconnect an earlier installation automatically.
+Save. Select the database already used by the working Prompta Worker. Creating another database would create a separate empty library.
 
-The tracked `wrangler.jsonc` is a template. Do not deploy its placeholder database ID directly. `.env.example` explains that no frontend key is needed. Never add the PIN/hash/session secret to `VITE_*` variables: Vite makes such values public in the built frontend.
+Cuebase prepares the required tables on the first API request. It keeps the existing workspace when the database has exactly one. It does not erase or rewrite prompts during setup. No SQL command or database ID needs to be copied.
 
-## Local use before publishing
+For a completely new installation only: create a D1 database in Cloudflare, then bind it as `DB`. This is not needed for your existing library.
 
-After install/setup, use:
+## 5. Set the PIN
 
-```bash
-npm start
-```
+In the same **cuebase Pages project**, open **Settings → Variables and Secrets → Add**.
 
-Open `http://127.0.0.1:8787`. The script applies **local** D1 migrations and serves the same Worker/PIN APIs and built frontend. It creates no remote resources. The included desktop launchers call this path, installing dependencies and running setup if missing.
+| Field | Enter/select |
+|---|---|
+| Name | `PIN` — uppercase |
+| Value | Your chosen 6–12 digit PIN |
+| Type | Secret, or select **Encrypt** |
 
-For a local development preview, `npm run dev` uses port 4173. `--port`, `--host` and `--strictPort` are accepted, as is `PORT`. The built app is served from `dist`; run `npm run build` after changes. A build is performed automatically only if `dist/index.html` is absent.
+Save. Leading zeros work. Enter the PIN only in Cloudflare, not in GitHub source files or a `VITE_` variable. There is no default PIN. The session secret is generated and stored privately by the server, so there is no second secret to invent or copy.
 
-Local data is not production data. Keep the same address/browser for cache continuity, and explicitly export/import any local records you want in the deployed workspace. Do not use a static-only server for the default build; missing API access produces a setup error instead of an unprotected local workspace.
+If Production and Preview are separate tabs, configure Production first. Preview deployments need their own PIN and database binding if you want to test them; use a separate test database for previews.
 
-## Change the PIN
+## 6. Deploy the new code with the saved settings
 
-Run `npm run setup` again, choose to change the existing PIN, then run `npm run launch` to apply it to the deployed Worker. Setup keeps the existing workspace/database and rotates the session secret. Existing server sessions become invalid. Without launching, the production PIN is unchanged; restarting the local server uses the updated local configuration.
+Return to **Deployments**. After saving the binding and secret, retry the deployment for the new **Switch to Cuebase Pages** commit. You can also push a new commit to trigger the build.
 
-A remote change cannot erase records already cached on an offline device. Those caches are not independently encrypted. Use **Lock** on a device before handing it to someone else, and only share the PIN with people who should have full access.
+Check the commit before retrying. An old deployment still builds its old files, even after you have uploaded newer files elsewhere.
 
-## Move an existing library
+Wait for a successful build. Open **https://cuebase.pages.dev/**, unlock it, and verify the prompts. Open that same address on your phone, enter the PIN, and check that a small test edit appears on both devices. Existing sessions from the old Worker address do not transfer; enter the PIN on the Pages address.
 
-### Earlier local records in this browser and origin
+If you previously worked only in a browser-local preview, those records are separate. Export them from that preview and review an import in Cuebase. The same-origin **Existing prompts on this device → Review import** action can also copy an older local library without deleting its original.
 
-1. Keep the existing browser/site data. Unlock the new shared workspace.
-2. Open **Settings → Data & backups**.
-3. If **Existing prompts on this device** appears, choose **Review import**.
-4. Review counts and warnings. Choose **Skip duplicates** or **Import copies**, then confirm.
-5. Wait for synchronization and check the records from a second device after deployment.
+## 7. Retire the older app after Cuebase works
 
-The review reads the previous `local` IndexedDB partition. It copies records only after confirmation and leaves the source partition intact. Importing makes the selected records accessible to everyone with the shared PIN. It does not automatically inspect previous authenticated-owner partitions or another origin/browser.
+Keep the old Worker until you have confirmed your prompts and a cross-device edit in Cuebase. The older `prompta.central-shayer.workers.dev` app is independent and still uses its own old PIN settings.
 
-### JSON export from another origin or earlier release
+After you have a working Cuebase deployment and an export, retire the old **Worker named `prompta`** in Cloudflare. Delete only that obsolete Worker application if you no longer need it. **Keep the `cuebase` Pages project and the `prompta-library` D1 database.** This also ends any schedule attached to the old Worker. If you deliberately use it for scheduled R2 backups, arrange a backup-only replacement before retiring it; the standard Pages setup does not run a schedule.
 
-Keep the previous release and its browser data available. In that release, export the intended library while its original browser/origin and required session remain available. In the new release, unlock, choose **Import JSON**, review the preview and confirm. The schema remains Prompta version 1, and imported ownership is reassigned to the current shared workspace.
+Simply disabling the `workers.dev` address is incomplete: Cloudflare documents that version and preview addresses can remain accessible. Removing the obsolete app closes those alternate entry points too.
 
-Skip mode preserves existing matching IDs without overwriting. Copy mode creates new IDs and remaps categories, tags, collections and versions. Existing preferences stay in place; deletion markers never execute deletes. Drafts and old pending/conflict internals are not migrated through library export. Complete earlier synchronization and resolve conflicts before exporting when possible.
+## If something does not work
 
-Keep the old release/export until text, links, collection order and available history have been checked. If the earlier library cannot be opened, retain the original browser profile and release; do not clear its data or assume the new empty workspace means the old records were deleted.
+| What you see | Check |
+|---|---|
+| Old Prompta name or an old error | Check that the deployment uses the new commit, then close all tabs for this site and reopen it. Keep browser data intact. |
+| PIN configuration message | `PIN` is a Production Secret on the Pages project; save and redeploy. |
+| Database setup message | Binding is exactly `DB`, pointing at `prompta-library`; save and redeploy. |
+| Empty library | Check that you selected the existing database. Stop before importing or deleting anything if the wrong database is bound. |
+| Wrong PIN | Use the PIN saved on Pages, which can differ from the old Worker PIN. |
+| Several workspaces detected | Copy the full non-secret `PROMPTA_WORKSPACE_ID` from the old Worker's settings into Pages as a text variable, then redeploy. Never guess it. |
+| Build cannot find `worker/tsconfig.json` | The whole project was not pushed. Use GitHub Desktop and include all changed source folders. |
+| Missing API or static HTML returned by an API | Build output must be `dist`, and `npm run build` must produce `dist/_worker.js`. |
 
-## Troubleshooting
-
-- **Setup requires an interactive terminal:** run it in a normal terminal; masked PIN input intentionally rejects piped/noninteractive input.
-- **Missing dependencies:** run `npm install` in the project folder.
-- **Name already exists:** restore the original installation configuration to update it, or choose a unique Worker name before first provisioning. Launch will not silently adopt another service.
-- **Saved database/bucket unavailable:** check that Cloudflare login uses the original account and that the resource still exists. Do not replace its ID merely to suppress the error.
-- **R2 creation fails:** enable R2 or rerun setup and disable optional backups, then launch again. Existing D1 data is retained.
-- **PIN API/setup error:** use the Worker server and generated configuration; static hosting alone does not provide authentication or synchronization.
-- **Too many PIN attempts:** wait for the server's retry window. The client cannot bypass it.
-
-See [deployment](DEPLOYMENT.md) for updates and [backups](BACKUPS.md) for independent recovery.
+Current Cloudflare references: [Git integration](https://developers.cloudflare.com/pages/configuration/git-integration/), [D1 bindings and secrets](https://developers.cloudflare.com/pages/functions/bindings/), [Pages advanced mode](https://developers.cloudflare.com/pages/functions/advanced-mode/), [Worker URL retirement caveat](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/).

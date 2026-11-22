@@ -10,7 +10,7 @@ import './styles.css';
 class ErrorBoundary extends Component<{children:ReactNode},{error:boolean}> {
   state = {error:false};
   static getDerivedStateFromError(){return {error:true};}
-  render(){if(this.state.error)return <main className="fatal-error"><img src="/favicon.svg" alt="" width="56"/><h1>Let’s get you back to your ideas.</h1><p>Something unexpected happened. Your saved prompts are still on this device.</p><button className="btn btn-primary" onClick={()=>location.reload()}>Reload Prompta</button></main>;return this.props.children;}
+  render(){if(this.state.error)return <main className="fatal-error"><img src="/favicon.svg" alt="" width="56"/><h1>Could not open Cuebase</h1><p>Reload to try again.</p><button className="btn btn-primary" onClick={()=>location.reload()}>Reload Cuebase</button></main>;return this.props.children;}
 }
 const root=createRoot(document.getElementById('root')!);
 if(import.meta.hot)import.meta.hot.dispose(()=>root.unmount());

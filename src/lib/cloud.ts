@@ -129,7 +129,7 @@ export class PromptaCloud {
     } finally { this.refreshing = false; if (revocation && this.locking === revocation) this.locking = undefined; }
   };
   unlock = async (pin: string): Promise<void> => {
-    if (localOnly) throw new Error('PIN access requires the Prompta server.');
+    if (localOnly) throw new Error('PIN access requires the Cuebase server.');
     if (!/^\d{6,12}$/.test(pin)) throw new Error('Enter a 6–12 digit PIN.');
     if (this.locking) await this.locking.catch(() => undefined);
     const generation = this.generation, marker = this.lockMarker();

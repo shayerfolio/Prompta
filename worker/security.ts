@@ -13,6 +13,10 @@ const fromBase64url = (value: string): Uint8Array => {
   const decoded = atob(value.replace(/-/g, '+').replace(/_/g, '/'));
   return Uint8Array.from(decoded, char => char.charCodeAt(0));
 };
+export function validSessionSecret(value: unknown): value is string {
+  try { return typeof value === 'string' && value.length <= 1024 && fromBase64url(value).byteLength >= 32; }
+  catch { return false; }
+}
 export async function digest(value: string): Promise<string> { return base64url(new Uint8Array(await crypto.subtle.digest('SHA-256', encoder.encode(value)))); }
 export async function hmac(secret: string, value: string): Promise<string> {
   const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -30,11 +34,17 @@ function pinConfiguration(env: Env) {
 
 export function requireConfiguration(env: Env): string {
   try {
-    if (!env.DB?.prepare || !env.PROMPTA_SESSION_SECRET || fromBase64url(env.PROMPTA_SESSION_SECRET).byteLength < 32) throw new Error();
+    if (!env.DB?.prepare || !validSessionSecret(env.PROMPTA_SESSION_SECRET)) throw new Error();
     const workspace = identifier(env.PROMPTA_WORKSPACE_ID, 'Workspace');
     pinConfiguration(env);
     return workspace;
-  } catch { throw new HttpError(503, 'Prompta’s server is not configured. Run npm run setup, then start or launch the configured app.'); }
+  } catch { throw new HttpError(503, 'Cuebase’s server is not configured. In Cloudflare Pages, add a D1 database binding named DB and a secret named PIN, then redeploy.'); }
+}
+
+export async function hashPin(pin: string, salt: Uint8Array): Promise<string> {
+  const key = await crypto.subtle.importKey('raw', encoder.encode(pin), 'PBKDF2', false, ['deriveBits']);
+  const derived = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: PIN_ITERATIONS }, key, 256);
+  return `pbkdf2-sha256:${PIN_ITERATIONS}:${base64url(salt)}:${base64url(new Uint8Array(derived))}`;
 }
 
 export async function verifyPin(pin: string, env: Env): Promise<boolean> {
@@ -57,7 +67,7 @@ export function requireSecureTransport(request: Request, env: Env) {
 }
 export function requireOrigin(request: Request) {
   const origin = request.headers.get('origin');
-  if (!origin || origin !== new URL(request.url).origin || request.headers.get('sec-fetch-site') === 'cross-site') throw new HttpError(403, 'This request must come from the Prompta website.');
+  if (!origin || origin !== new URL(request.url).origin || request.headers.get('sec-fetch-site') === 'cross-site') throw new HttpError(403, 'This request must come from the Cuebase website.');
 }
 
 function cookieName(request: Request, env: Env) { return localHttpAllowed(request, env) ? 'prompta_dev_session' : '__Host-prompta_session'; }
@@ -91,6 +101,9 @@ export async function createSession(env: Env): Promise<{ token: string; expiresA
   const expires = now + maxAge * 1000;
   await env.DB.batch([
     env.DB.prepare('DELETE FROM sessions WHERE expires_at <= ?').bind(now),
+    // Pages has no scheduled handler. Successful unlocks also clean old rate
+    // buckets, so normal use does not depend on a separate cron Worker.
+    env.DB.prepare('DELETE FROM rate_limits WHERE window_start < ?').bind(Math.floor(now / 1000) - 2 * RATE_WINDOW_SECONDS),
     env.DB.prepare('INSERT INTO sessions(token_hash, workspace_id, auth_epoch, created_at, expires_at) VALUES (?, ?, ?, ?, ?)')
       .bind(await tokenHash(token, env), env.PROMPTA_WORKSPACE_ID!, await authEpoch(env), now, expires),
   ]);

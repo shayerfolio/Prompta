@@ -1,63 +1,74 @@
-PROMPTA 0.7
+CUEBASE 0.8 — YOUR EXISTING GITHUB + CLOUDFLARE PAGES SETUP
 
-INSTALL / SETUP / LAUNCH
+Your address stays: https://cuebase.pages.dev/
+Your existing database stays: prompta-library
+The GitHub repository can stay named Prompta.
 
-Install Node.js 22.12 or newer from https://nodejs.org/ and have a Cloudflare
-account ready. Extract the full project, open a terminal in that folder, and run:
+1. UPDATE YOUR GITHUB PROJECT
 
-  npm install
-  npm run setup
-  npm run launch
+Extract the whole ZIP into Downloads, outside your existing project folder.
+Open the extracted Cuebase folder and double-click Update-Cuebase.bat.
 
-Setup asks for a Worker name, optional daily R2 backups, and your 6–12 digit PIN.
-PIN entry is masked. There is no default PIN and no Google sign-in.
-Setup saves local configuration only.
+When it asks for the existing project folder, use:
+C:\Users\MSI\Documents\GitHub\Prompta
+If that folder is already shown, press Enter.
 
-Launch is the command that publishes to Cloudflare. It opens Cloudflare login if
-needed, creates/migrates D1, configures optional R2, uploads server secrets and
-deploys the app. Open its printed URL on any device and enter the same PIN to use
-the same shared library. Everyone with the PIN has the same library access.
+This updates the complete project, saves replaced files in a local backup,
+and removes the old deployment files. It does not publish anything.
 
-R2 must be enabled in your Cloudflare account if you select backups. Platform
-quotas and charges depend on your plan and usage. Read docs/SETUP.md for details.
-Nothing was published or deployed during this delivery.
+Open GitHub Desktop and select your Prompta repository.
+Review the changes, enter the summary "Switch to Cuebase Pages", click
+Commit, then Push origin. Include all project folders shown in the changes.
 
-LOCAL REVIEW ONLY
+2. OPEN YOUR EXISTING CLOUDFLARE PAGES PROJECT
 
-After npm install and npm run setup, run npm start instead of npm run launch.
-Open http://127.0.0.1:8787 and enter your PIN. Keep the terminal open.
-This uses a real local Worker and local D1. It does not write to the deployed
-library. Windows: Start-Prompta.bat. macOS: Start-Prompta.command.
+Cloudflare > Workers & Pages > cuebase
+Use the existing Pages project. Keep its existing GitHub connection.
 
-Do not open dist/index.html directly. A static-only server cannot provide the PIN
-API. Local records need explicit export/import to move into the deployed library.
+Under Settings > Build, check:
+  Build command:          npm run build
+  Build output directory: dist
+  Root directory:         leave blank
+  Framework preset:       None (if a preset is requested)
 
-USING THE LIBRARY
+3. SET THE DATABASE AND PIN
 
-All prompts opens by default. The library starts empty. New prompt adds a record.
-Click a card's main content or blank area to copy its original text immediately.
-Cards show full titles and content. Variables appears only when placeholders are
-present and opens the variable form directly. History is in the ellipsis menu.
-There is no Details button. The grid Size slider adjusts card width on this device.
-Create, save and duplicate do not automatically open a panel.
+Use the Production environment.
 
-The mobile navigation is Prompts / Favorites / New / Collections.
-Settings includes Access, Data & backups, sync status and conflict review.
-Lock closes this device's access. Previously unlocked offline caches are not
-independently encrypted; use trusted devices and keep exports.
+Settings > Bindings > Add > D1 database:
+  Variable name: DB
+  Database:      prompta-library
+Save.
 
-UPGRADE AN EXISTING LIBRARY
+Settings > Variables and Secrets > Add:
+  Name:  PIN
+  Value: your chosen PIN, 6 to 12 digits
+Choose Secret / Encrypt, then Save.
 
-If earlier local records exist in this browser and origin, unlock Prompta and use
-Settings > Data & backups > Existing prompts on this device > Review import.
-Otherwise export JSON from the earlier release and import it after unlocking.
-Review and confirm; nothing is copied into the shared workspace automatically.
-Keep old records/exports until the migration is verified. Do not clear site data.
+Only PIN and DB are required. No database ID, PIN hash, session secret,
+Cloudflare login command or manual database setup is needed.
 
-Keep .prompta, .dev.vars and wrangler.config.json private. Preserve the same
-workspace ID/database configuration when updating. Never distribute your local
-server secrets with source code.
+4. DEPLOY THE UPDATED COMMIT
 
-Read README.md for usage, docs/SETUP.md for setup/migration, docs/DEPLOYMENT.md for
-updates, docs/BACKUPS.md for recovery, and docs/TEST_RESULTS.md for actual checks.
-The latest requirements in docs/UI_REVISION.md supersede the historical brief.
+If the push already started a build, let it finish. After saving the settings,
+open Deployments and retry the deployment for your NEW Cuebase commit.
+Check the commit message. Retrying an old commit rebuilds the old app.
+
+When the deployment succeeds, open https://cuebase.pages.dev/ and enter the PIN.
+Open the same address on your phone and check that both show the same prompts.
+
+If your old library has prompts, choosing the existing prompta-library database
+keeps them. Do not delete the database or clear browser data while moving over.
+
+AFTER IT WORKS
+
+Keep using GitHub Desktop > Commit > Push origin for later code updates.
+To change the PIN: edit the PIN secret in cuebase, save, and deploy again.
+You do not need npm run launch.
+
+The older prompta Worker is a separate app. Retire it only after Cuebase works;
+docs/SETUP.md explains this final cleanup and keeps your database intact.
+Scheduled cloud backups are not enabled by this Pages setup. JSON export works.
+
+Need more detail? Open docs/SETUP.md. Local preview is optional; use
+Start-Cuebase.bat only if you want to run a separate test library on this PC.

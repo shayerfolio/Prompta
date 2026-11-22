@@ -8,13 +8,14 @@ export default defineConfig({
     registerType: 'prompt',
     includeAssets: ['favicon.svg'],
     manifest: {
-      name: 'Prompta', short_name: 'Prompta',
-      description: 'Private prompt library',
+      name: 'Cuebase', short_name: 'Cuebase',
+      description: 'Shared prompt library',
       theme_color: '#171717', background_color: '#171717', display: 'standalone',
       start_url: '/', icons: [{src:'/favicon.svg',sizes:'any',type:'image/svg+xml',purpose:'any'}]
     },
     workbox: {
       globPatterns: ['**/*.{js,css,html,svg,woff2,webmanifest}'],
+      globIgnores: ['_worker.js', '_worker.js/**', '_routes.json'],
       navigateFallback: '/index.html',
       navigateFallbackDenylist: [/^\/api/, /^\/__/],
       maximumFileSizeToCacheInBytes: 3500000,

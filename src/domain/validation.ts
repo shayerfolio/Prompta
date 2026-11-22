@@ -95,7 +95,7 @@ export function validateEntity(value: unknown): Entity {
 
 export function validateExport(value: unknown): ExportData {
   const record = object(value, 'Import file');
-  if (record.app !== 'Prompta' || record.schemaVersion !== 1) fail('This file is not a supported Prompta backup (schema version 1).');
+  if (record.app !== 'Prompta' || record.schemaVersion !== 1) fail('This file is not a supported Cuebase backup (schema version 1).');
   const entities = list(record.entities, 'Library records').map(validateEntity);
   const seen = new Set<string>();
   for (const entity of entities) {
@@ -108,6 +108,6 @@ export function validateExport(value: unknown): ExportData {
 export function parseLibraryExport(text: string): ExportData {
   if (new Blob([text]).size > 25 * 1024 * 1024) fail('Import files must be smaller than 25 MB.');
   let value: unknown;
-  try { value = JSON.parse(text); } catch { return fail('This file is not valid JSON. Choose an exported Prompta backup.'); }
+  try { value = JSON.parse(text); } catch { return fail('This file is not valid JSON. Choose an exported Cuebase backup.'); }
   return validateExport(value);
 }

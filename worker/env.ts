@@ -4,6 +4,8 @@ export interface Env {
   DB: D1Database;
   ASSETS?: Fetcher;
   BACKUPS?: R2Bucket;
+  /** Dashboard-only runtime secret. Never expose this in a VITE_ variable. */
+  PIN?: string;
   PROMPTA_WORKSPACE_ID?: string;
   PROMPTA_PIN_HASH?: string;
   PROMPTA_SESSION_SECRET?: string;
